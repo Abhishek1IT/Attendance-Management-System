@@ -1,6 +1,6 @@
 import Attendance from "../models/Attendance.js";
 
-const getToday = () => new Date().toISOString().split("T")[0];
+const getToday = () => new Date().toLocaleDateString("en-CA");
 
 export const markAttendance = async (req, res) => {
   try {
@@ -106,6 +106,42 @@ export const monthlyAttendance = async (req, res) => {
       presentDays,
       halfDays,
       totalWorkingHours: Number((totalWorkingMinutes / 60).toFixed(2)),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getAllAttendance = async (req, res) => {
+  try {
+    const attendance = await Attendance.find()
+      .populate("userId", "name email") 
+      .sort({ date: -1 });
+
+    res.status(200).json(attendance);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const updateAttendance = async (req, res) => {
+  const { id } = req.params;
+  const { status, remark } = req.body;
+
+  try {
+    const updaterecord = await Attendance.findByIdAndUpdate(
+      id,
+      { status, remark, updatedAt: new Date() },
+      { new: true },
+    );
+
+    if (!updaterecord) {
+      return res.status(404).json({ message: "Attendance record not found" });
+    }
+
+    res.status(200).json({
+      message: "Attendance record updated successfully",
+      data: updaterecord,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

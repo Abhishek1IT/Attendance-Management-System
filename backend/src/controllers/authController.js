@@ -17,6 +17,7 @@ export const register = async (req, res) => {
             password: hashedPassword,
             role: role || "Employee"
         });
+        console.log("Saved user:", user);
         res.status(201).json({
             _id: user._id,
             name: user.name,

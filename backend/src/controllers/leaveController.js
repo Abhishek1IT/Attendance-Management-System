@@ -3,11 +3,22 @@ import Leave from "../models/Leave.js";
 export const applyLeave = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const { fromDate, toDate, reason } = req.body;
 
     if (!fromDate || !toDate || !reason) {
       return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const overlap = await Leave.findOne({
+      userId,
+      fromDate: { $lte: toDate },
+      toDate: { $gte: fromDate },
+    });
+
+    if (overlap) {
+      return res.status(400).json({
+        message: "Leave already exists for selected dates",
+      });
     }
 
     const leave = await Leave.create({
@@ -17,40 +28,24 @@ export const applyLeave = async (req, res) => {
       reason,
       status: "Pending",
     });
-    res.status(201).json({
+
+    return res.status(201).json({
       message: "Leave applied successfully",
       leave,
     });
-
-    const overlap = await Leave.findOne({
-      userId,
-      $or: [
-        {
-          fromDate: { $lte: toDate },
-          toDate: { $gte: fromDate },
-        },
-      ],
-    });
-
-    if (overlap) {
-      return res.status(400).json({
-        message: "Leave already exists for selected dates",
-      });
-    }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
 export const myLeaves = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const leaves = await Leave.find({ userId }).sort({ createdAt: -1 });
 
-    res.json(leaves);
+    return res.json(leaves);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -61,20 +56,14 @@ export const getAllLeaves = async (req, res) => {
       .populate("approvedBy", "name email")
       .sort({ createdAt: -1 });
 
-    res.json(leaves);
+    return res.json(leaves);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
 export const updateLeaveStatus = async (req, res) => {
   try {
-    if (leave.userId.toString() === req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "You cannot approve your own leave" });
-    }
-
     const { id } = req.params;
     const { status } = req.body;
 
@@ -82,7 +71,10 @@ export const updateLeaveStatus = async (req, res) => {
       return res.status(400).json({ message: "Status is required" });
     }
 
-    if (!["approved", "rejected"].includes(status)) {
+    const normalizedStatus =
+      status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+
+    if (!["Approved", "Rejected"].includes(normalizedStatus)) {
       return res.status(400).json({ message: "Invalid status" });
     }
 
@@ -91,17 +83,22 @@ export const updateLeaveStatus = async (req, res) => {
     if (!leave) {
       return res.status(404).json({ message: "Leave request not found" });
     }
-    leave.status =
-      status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-    leave.approvedBy = req.user.id;
 
+    if (leave.userId.toString() === req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "You cannot approve your own leave" });
+    }
+
+    leave.status = normalizedStatus;
+    leave.approvedBy = req.user.id;
     await leave.save();
 
-    res.json({
+    return res.json({
       message: "Leave status updated successfully",
       leave,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };

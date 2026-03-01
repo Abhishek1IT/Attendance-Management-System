@@ -11,16 +11,13 @@ export const protect = (role) => {
     ) {
       try {
         token = req.headers.authorization.split(" ")[1];
+
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
         const user = await User.findById(decoded.id).select("-password");
+
         if (!user) {
           return res.status(401).json({ message: "User not found" });
-        }
-
-        if (role && user.role !== role) {
-          return res.status(403).json({
-            message: `  Access denied: Requires ${role} role`,
-          });
         }
 
         req.user = {
@@ -29,9 +26,15 @@ export const protect = (role) => {
           email: user.email,
           role: user.role,
         };
+
+        if (role && req.user.role.toLowerCase() !== role.toLowerCase()) {
+          return res.status(403).json({
+            message: `Access denied: Requires ${role} role`,
+          });
+        }
+
         next();
       } catch (error) {
-        console.log(error.message);
         return res.status(401).json({ message: "Invalid token" });
       }
     } else {
