@@ -12,7 +12,7 @@ const connectDB = async () => {
     console.log("DB:", mongoose.connection.name);
   } catch (error) {
     console.error("DB error:", error.message);
-    process.exit(1);
+    throw error;
   }
 };
 

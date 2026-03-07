@@ -1,6 +1,7 @@
 import express from "express";
 import { protect } from "../middlewares/authMiddleware.js";
 import {
+  getMyProfile,
   getAllUsers,
   updateUserRole,
   deleteUser,
@@ -8,6 +9,7 @@ import {
 } from "../controllers/userController.js";
 
 const router = express.Router();
+router.get("/me", protect(), getMyProfile);
 router.get("/all", protect("Admin"), getAllUsers);
 router.post("/role/:id", protect("Admin"), updateUserRole);
 

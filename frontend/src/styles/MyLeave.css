@@ -1,0 +1,138 @@
+.my-leaves-page {
+  min-height: 100vh;
+  width: 100%;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: #eef2f7;
+}
+
+.my-leaves-card {
+  width: 100%;
+  max-width: 980px;
+  background: #ffffff;
+  border: 1px solid #dbe2ef;
+  border-radius: 12px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+  padding: 20px;
+}
+
+.my-leaves-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.my-leaves-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.my-leaves-back {
+  display: inline-block;
+  text-decoration: none;
+  color: #000000;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: 1px solid #000000;
+  background: #0a68e3;
+  border-radius: 4px;
+  padding: 5px 10px;
+}
+
+.my-leaves-back:hover {
+  color: #084d82;
+  background: #dbeafe;
+}
+
+.my-leaves-error,
+.my-leaves-empty {
+  margin: 8px 0 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.93rem;
+}
+
+.my-leaves-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.my-leaves-empty {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.my-leaves-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.my-leaves-row {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #edf2f7;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.my-leaves-row:last-child {
+  border-bottom: none;
+}
+
+.my-leaves-row-head {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.my-leaves-status {
+  justify-self: start;
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  background: #eff6ff;
+}
+
+@media (max-width: 900px) {
+  .my-leaves-page {
+    padding: 14px;
+  }
+
+  .my-leaves-card {
+    padding: 14px;
+  }
+
+  .my-leaves-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 560px) {
+  .my-leaves-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
