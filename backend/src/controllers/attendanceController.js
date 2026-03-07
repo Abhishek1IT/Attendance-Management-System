@@ -7,11 +7,26 @@ const getWorkingMinutes = (attendance) => {
     return 0;
   }
 
-  const diff = (new Date(attendance.checkout) - new Date(attendance.checkIn)) / (1000 * 60);
+  const diff =
+    (new Date(attendance.checkout) - new Date(attendance.checkIn)) /
+    (1000 * 60);
   return diff > 0 ? diff : 0;
 };
 
-const toWorkingHours = (workingMinutes) => Number((workingMinutes / 60).toFixed(2));
+const toWorkingHours = (workingMinutes) =>
+  Number((workingMinutes / 60).toFixed(2));
+
+const getStatusByWorkingMinutes = (workingMinutes) => {
+  if (workingMinutes <= 240) {
+    return "absent";
+  }
+
+  if (workingMinutes < 360) {
+    return "half-day";
+  }
+
+  return "present";
+};
 
 const withWorkingHours = (attendance) => {
   const workingMinutes = getWorkingMinutes(attendance);
@@ -47,6 +62,8 @@ export const markAttendance = async (req, res) => {
 
     if (attendance.checkIn && !attendance.checkout) {
       attendance.checkout = new Date();
+      const workingMinutes = getWorkingMinutes(attendance);
+      attendance.status = getStatusByWorkingMinutes(workingMinutes);
       await attendance.save();
 
       return res.json({
@@ -128,7 +145,7 @@ export const monthlyAttendance = async (req, res) => {
 export const getAllAttendance = async (req, res) => {
   try {
     const attendance = await Attendance.find()
-      .populate("userId", "name email") 
+      .populate("userId", "name email")
       .sort({ date: -1 })
       .lean();
 

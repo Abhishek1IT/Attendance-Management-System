@@ -17,21 +17,15 @@ const fixpresentAndHalfDay = async () => {
       process.exit(0);
     }
 
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-
     const recorde = await Attendance.find({
-      date: { $gte: start, $lte: end },
+      date: today,
       checkIn: { $ne: null },
       checkout: { $ne: null },
-      status: { $ne: "absent" },
     });
 
     let presentCount = 0;
     let halfDayCount = 0;
+    let absentCount = 0;
 
     for (const rec of recorde) {
       const start = new Date(rec.checkIn);
@@ -40,7 +34,11 @@ const fixpresentAndHalfDay = async () => {
       const minutes = (end - start) / (1000 * 60);
       const hours = minutes / 60;
 
-      if (hours < 5.5) {
+      if (hours <= 4) {
+        rec.status = "absent";
+        rec.remark = "Auto Absent (Very low working hours)";
+        absentCount++;
+      } else if (hours < 6) {
         rec.status = "half-day";
         rec.remark = "Auto Half Day (Low working hours)";
         halfDayCount++;
@@ -55,6 +53,7 @@ const fixpresentAndHalfDay = async () => {
 
     console.log("Present fixed:", presentCount);
     console.log("Half-day fixed:", halfDayCount);
+    console.log("Absent fixed:", absentCount);
 
     process.exit(0);
   } catch (err) {
