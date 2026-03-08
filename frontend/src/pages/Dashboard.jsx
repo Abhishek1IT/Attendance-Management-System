@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [message, setMessage] = useState("");
   const [canMark, setCanMark] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
+  const [isCheckoutPending, setIsCheckoutPending] = useState(false);
 
   const today = useMemo(() => new Date().toLocaleDateString("en-CA"), []);
 
@@ -39,14 +40,24 @@ export default function Dashboard() {
         const res = await myAttendanceApi();
         const todayAttendance = res.data?.find((item) => item.date === today);
 
+        if (todayAttendance?.checkIn && !todayAttendance?.checkout) {
+          setCanMark(true);
+          setIsCheckoutPending(true);
+          setMessage("You are checked in. Please checkout to complete today attendance.");
+          return;
+        }
+
         if (todayAttendance?.checkIn && todayAttendance?.checkout) {
           setCanMark(false);
+          setIsCheckoutPending(false);
           setMessage("You have already checked in and checked out today");
           return;
         }
 
+        setIsCheckoutPending(false);
         setCanMark(true);
       } catch {
+        setIsCheckoutPending(false);
         setCanMark(true);
       }
     };
@@ -70,6 +81,10 @@ export default function Dashboard() {
         (attendance?.checkIn && attendance?.checkout)
       ) {
         setCanMark(false);
+        setIsCheckoutPending(false);
+      } else if (attendance?.checkIn && !attendance?.checkout) {
+        setCanMark(true);
+        setIsCheckoutPending(true);
       }
     } catch (error) {
       const message =
@@ -79,6 +94,7 @@ export default function Dashboard() {
 
       if (message.toLowerCase().includes("already checked in and checked out")) {
         setCanMark(false);
+        setIsCheckoutPending(false);
       }
     } finally {
       setIsMarking(false);
@@ -133,7 +149,9 @@ export default function Dashboard() {
             {isMarking
               ? "Please wait..."
               : canMark
-                ? "Mark Attendance"
+                ? isCheckoutPending
+                  ? "Checkout Now"
+                  : "Check In"
                 : "Attendance Closed for Today"}
           </button>
           {message ? <p className="dashboard-message">{message}</p> : null}

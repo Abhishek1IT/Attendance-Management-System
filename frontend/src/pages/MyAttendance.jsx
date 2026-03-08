@@ -47,6 +47,22 @@ export default function MyAttendance() {
         "December"
     ];
 
+    const formatTime = (value) => {
+        if (!value) return "-";
+        return new Date(value).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    };
+
+    const getStatusLabel = (status) => {
+        if (status === "checkout-pending") {
+            return "Checkout Pending";
+        }
+
+        return status;
+    };
+
     return (
         <div className="my-attendance-page">
             <div className="my-attendance-card">
@@ -114,12 +130,16 @@ export default function MyAttendance() {
                         <div className="my-attendance-row my-attendance-row-head">
                             <span>Date</span>
                             <span>Status</span>
+                            <span>Check In</span>
+                            <span>Check Out</span>
                             <span>Hours</span>
                         </div>
                         {data.map((d) => (
                             <div className="my-attendance-row" key={d._id}>
                                 <span>{new Date(d.date).toLocaleDateString()}</span>
-                                <span className="my-attendance-status">{d.status}</span>
+                                <span className="my-attendance-status">{getStatusLabel(d.status)}</span>
+                                <span>{formatTime(d.checkIn)}</span>
+                                <span>{formatTime(d.checkout)}</span>
                                 <span>{d.workingHours ?? 0} h</span>
                             </div>
                         ))}

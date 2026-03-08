@@ -28,10 +28,24 @@ const getStatusByWorkingMinutes = (workingMinutes) => {
   return "present";
 };
 
+const getEffectiveStatus = (attendance) => {
+  if (!attendance?.checkIn) {
+    return String(attendance?.status || "absent").toLowerCase();
+  }
+
+  if (!attendance?.checkout) {
+    return "checkout-pending";
+  }
+
+  return getStatusByWorkingMinutes(getWorkingMinutes(attendance));
+};
+
 const withWorkingHours = (attendance) => {
   const workingMinutes = getWorkingMinutes(attendance);
   return {
     ...attendance,
+    status: getEffectiveStatus(attendance),
+    isCheckoutPending: Boolean(attendance?.checkIn && !attendance?.checkout),
     workingHours: toWorkingHours(workingMinutes),
   };
 };
@@ -116,7 +130,7 @@ export const monthlyAttendance = async (req, res) => {
     let halfDays = 0;
 
     list.forEach((a) => {
-      const normalizedStatus = String(a.status || "").toLowerCase();
+      const normalizedStatus = getEffectiveStatus(a);
 
       if (normalizedStatus === "present") {
         presentDays += 1;

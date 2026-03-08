@@ -6,7 +6,9 @@ COPY package*.json ./
 
 RUN npm install
 
-COPY . .
+COPY index.js ./
+COPY src ./src
+COPY scripts ./scripts
 
 EXPOSE 5000
 

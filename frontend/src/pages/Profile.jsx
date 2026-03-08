@@ -56,7 +56,7 @@ export default function Profile() {
         </div>
 
         <div className="profile-item profile-item-last">
-          <span className="profile-label">Role</span>
+          <span className="profile-label">Role:</span>
           <span className="profile-value profile-role">{user.role}</span>
         </div>
       </div>
