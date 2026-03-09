@@ -8,6 +8,18 @@ import {
   withWorkingHours,
 } from "../utils/attendanceUtils.js";
 
+const EMAIL_TIME_ZONE = process.env.EMAIL_TIME_ZONE || "Asia/Kolkata";
+
+const formatEmailTime = (value) => {
+  return new Intl.DateTimeFormat("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZone: EMAIL_TIME_ZONE,
+  }).format(new Date(value));
+};
+
 const buildAttendanceEmailHtml = ({ title, name, date, details = [] }) => {
   const detailRows = details
     .map(
@@ -60,7 +72,7 @@ export const markAttendance = async (req, res) => {
             { label: "Status", value: "Checked In" },
             {
               label: "Check-in Time",
-              value: new Date(attendance.checkIn).toLocaleTimeString(),
+              value: formatEmailTime(attendance.checkIn),
             },
           ],
         }),
@@ -92,11 +104,11 @@ export const markAttendance = async (req, res) => {
             { label: "Status", value: "Checked Out" },
             {
               label: "Check-in Time",
-              value: new Date(attendance.checkIn).toLocaleTimeString(),
+              value: formatEmailTime(attendance.checkIn),
             },
             {
               label: "Checkout Time",
-              value: new Date(attendance.checkout).toLocaleTimeString(),
+              value: formatEmailTime(attendance.checkout),
             },
             {
               label: "Working Hours",
