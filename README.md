@@ -17,6 +17,7 @@ A full-stack attendance tracking application with role-based access for Admin an
 - Mark attendance and view personal attendance
 - Monthly attendance summary
 - Leave application and leave status workflow
+- Email notifications for attendance (check-in/check-out) and leave status updates
 - Admin attendance management
 - Admin leave approval/rejection
 - Admin user management
@@ -92,6 +93,8 @@ Backend uses these environment variables:
 - `MONGO_URI`
 - `JWT_SECRET`
 - `FRONTEND_URL`
+- `EMAIL_USER` (SMTP sender email, e.g. Gmail)
+- `EMAIL_PASS` (SMTP app password)
 
 Example `.env` for `backend/`:
 
@@ -100,7 +103,13 @@ PORT=5000
 MONGO_URI=mongodb://localhost:27017/company
 JWT_SECRET=replace_with_strong_secret
 FRONTEND_URL=http://localhost:5173
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_email_app_password
 ```
+
+Email note:
+
+- If you are using Gmail, use a valid App Password (not your normal account password).
 
 Env file usage:
 
@@ -193,6 +202,10 @@ Backend allows these origins:
 - `500 Internal Server Error`: check backend logs for stack trace.
 - Frontend API not connecting in local mode: add Vite proxy or run via Docker setup.
 - CORS issues: verify `FRONTEND_URL` and frontend origin.
+- Leave approved/rejected email not received:
+	- verify `EMAIL_USER` and `EMAIL_PASS` are set in the active env file (`.env` or `.env.docker`)
+	- check backend logs for `Error sending email` or `Leave status email failed`
+	- check Spam/Junk folder
 
 ## Future Improvements
 
