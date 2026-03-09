@@ -1,53 +1,31 @@
 import Attendance from "../models/Attendance.js";
+import { sendEmail } from "../utils/sendEmail.js";
+import {
+  getToday,
+  getWorkingMinutes,
+  getStatusByWorkingMinutes,
+  getEffectiveStatus,
+  withWorkingHours,
+} from "../utils/attendanceUtils.js";
 
-const getToday = () => new Date().toLocaleDateString("en-CA");
+const buildAttendanceEmailHtml = ({ title, name, date, details = [] }) => {
+  const detailRows = details
+    .map(
+      (item) =>
+        `<tr><td style=\"padding:8px 0;color:#475569;\">${item.label}</td><td style=\"padding:8px 0;color:#0f172a;font-weight:600;\">${item.value}</td></tr>`,
+    )
+    .join("");
 
-const getWorkingMinutes = (attendance) => {
-  if (!attendance?.checkIn || !attendance?.checkout) {
-    return 0;
-  }
-
-  const diff =
-    (new Date(attendance.checkout) - new Date(attendance.checkIn)) /
-    (1000 * 60);
-  return diff > 0 ? diff : 0;
-};
-
-const toWorkingHours = (workingMinutes) =>
-  Number((workingMinutes / 60).toFixed(2));
-
-const getStatusByWorkingMinutes = (workingMinutes) => {
-  if (workingMinutes <= 240) {
-    return "absent";
-  }
-
-  if (workingMinutes < 360) {
-    return "half-day";
-  }
-
-  return "present";
-};
-
-const getEffectiveStatus = (attendance) => {
-  if (!attendance?.checkIn) {
-    return String(attendance?.status || "absent").toLowerCase();
-  }
-
-  if (!attendance?.checkout) {
-    return "checkout-pending";
-  }
-
-  return getStatusByWorkingMinutes(getWorkingMinutes(attendance));
-};
-
-const withWorkingHours = (attendance) => {
-  const workingMinutes = getWorkingMinutes(attendance);
-  return {
-    ...attendance,
-    status: getEffectiveStatus(attendance),
-    isCheckoutPending: Boolean(attendance?.checkIn && !attendance?.checkout),
-    workingHours: toWorkingHours(workingMinutes),
-  };
+  return `
+    <div style="background:#f8fafc;padding:24px;font-family:Arial,sans-serif;">
+      <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+        <h2 style="margin:0 0 10px;color:#0f172a;">${title}</h2>
+        <p style="margin:0 0 14px;color:#334155;">Hello ${name}, your attendance update is recorded.</p>
+        <table style="width:100%;border-collapse:collapse;">${detailRows}</table>
+        <p style="margin:16px 0 0;color:#64748b;font-size:13px;">Date: ${date}</p>
+      </div>
+    </div>
+  `;
 };
 
 export const markAttendance = async (req, res) => {
@@ -68,9 +46,29 @@ export const markAttendance = async (req, res) => {
         status: "present",
       });
 
+      const responseAttendance = withWorkingHours(attendance.toObject());
+
+      await sendEmail(
+        req.user.email,
+        "Check-in Successful",
+        `You have successfully checked in on ${today}.`,
+        buildAttendanceEmailHtml({
+          title: "Check-in Successful",
+          name: req.user.name || "User",
+          date: today,
+          details: [
+            { label: "Status", value: "Checked In" },
+            {
+              label: "Check-in Time",
+              value: new Date(attendance.checkIn).toLocaleTimeString(),
+            },
+          ],
+        }),
+      );
+
       return res.status(201).json({
         message: "Checked in successfully",
-        attendance: withWorkingHours(attendance.toObject()),
+        attendance: responseAttendance,
       });
     }
 
@@ -80,9 +78,37 @@ export const markAttendance = async (req, res) => {
       attendance.status = getStatusByWorkingMinutes(workingMinutes);
       await attendance.save();
 
+      const responseAttendance = withWorkingHours(attendance.toObject());
+
+      await sendEmail(
+        req.user.email,
+        "Checkout Successful",
+        `You have successfully checked out on ${today}. Total working hours: ${responseAttendance.workingHours}.`,
+        buildAttendanceEmailHtml({
+          title: "Checkout Successful",
+          name: req.user.name || "User",
+          date: today,
+          details: [
+            { label: "Status", value: "Checked Out" },
+            {
+              label: "Check-in Time",
+              value: new Date(attendance.checkIn).toLocaleTimeString(),
+            },
+            {
+              label: "Checkout Time",
+              value: new Date(attendance.checkout).toLocaleTimeString(),
+            },
+            {
+              label: "Working Hours",
+              value: `${responseAttendance.workingHours} h`,
+            },
+          ],
+        }),
+      );
+
       return res.json({
         message: "Checked out successfully",
-        attendance: withWorkingHours(attendance.toObject()),
+        attendance: responseAttendance,
       });
     }
 

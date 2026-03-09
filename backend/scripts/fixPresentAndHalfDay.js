@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 
 import Attendance from "../src/models/Attendance.js";
+import {
+  getToday,
+  getWorkingMinutes,
+  getStatusByWorkingMinutes,
+} from "../src/utils/attendanceUtils.js";
 
 dotenv.config();
 
@@ -10,7 +15,7 @@ const fixpresentAndHalfDay = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected to MongoDB");
 
-    const today = new Date().toLocaleDateString("en-CA");
+    const today = getToday();
 
     if (new Date().getDay() === 0) {
       console.log("Today is Sunday. Skipping.");
@@ -28,22 +33,17 @@ const fixpresentAndHalfDay = async () => {
     let absentCount = 0;
 
     for (const rec of recorde) {
-      const start = new Date(rec.checkIn);
-      const end = new Date(rec.checkout);
+      const workingMinutes = getWorkingMinutes(rec);
+      const computedStatus = getStatusByWorkingMinutes(workingMinutes);
+      rec.status = computedStatus;
 
-      const minutes = (end - start) / (1000 * 60);
-      const hours = minutes / 60;
-
-      if (hours <= 4) {
-        rec.status = "absent";
+      if (computedStatus === "absent") {
         rec.remark = "Auto Absent (Very low working hours)";
         absentCount++;
-      } else if (hours < 6) {
-        rec.status = "half-day";
+      } else if (computedStatus === "half-day") {
         rec.remark = "Auto Half Day (Low working hours)";
         halfDayCount++;
       } else {
-        rec.status = "present";
         rec.remark = "Auto Present (Sufficient working hours)";
         presentCount++;
       }

@@ -4,7 +4,7 @@ import { markAttendance,
          myAttendance, 
          monthlyAttendance, 
          getAllAttendance, 
-         updateAttendance 
+         updateAttendance
         } from '../controllers/attendanceController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 

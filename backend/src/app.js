@@ -14,6 +14,7 @@ const app = express();
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  "http://localhost",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 ].filter(Boolean);
@@ -21,7 +22,11 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      const isLocalhostOrigin =
+        typeof origin === "string" &&
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+
+      if (!origin || allowedOrigins.includes(origin) || isLocalhostOrigin) {
         callback(null, true);
         return;
       }

@@ -102,6 +102,11 @@ JWT_SECRET=replace_with_strong_secret
 FRONTEND_URL=http://localhost:5173
 ```
 
+Env file usage:
+
+- Local run (`npm start`, script execution): uses `backend/.env` via `dotenv.config()`.
+- Docker run (`docker compose up` from `backend/`): uses `backend/.env.docker` through `docker-compose.yml` `env_file`.
+
 ## Run With Docker (Recommended)
 
 From the `backend/` directory:
@@ -133,7 +138,7 @@ Run MongoDB locally and ensure `MONGO_URI` points to it.
 ```bash
 cd backend
 npm install
-npm start
+node index.js 
 ```
 
 Backend runs on `http://localhost:5000`.
@@ -164,8 +169,8 @@ Run manually:
 
 ```bash
 cd backend
-node scripts/markAbsent.js
-node scripts/fixPresentAndHalfDay.js
+npm run attendance:mark-absent
+npm run attendance:fix
 ```
 
 ## Authentication Flow
