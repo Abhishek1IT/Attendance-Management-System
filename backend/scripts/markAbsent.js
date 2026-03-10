@@ -30,21 +30,31 @@ const markAbsent = async () => {
       process.exit(0);
     }
 
-    const [attendedIds, approvedLeaves] = await Promise.all([
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    const [attendedIds, approvedLeaveIds] = await Promise.all([
       Attendance.find({ date: today }).distinct("userId"),
       Leave.find({
-        status: "approved",
-        fromDate: { $lte: today },
-        toDate: { $gte: today },
-      }).select("userId"),
+        status: "Approved",
+        fromDate: { $lt: todayEnd },
+        toDate: { $gte: todayStart },
+      }).distinct("userId"),
     ]);
 
-    const approvedLeaveIds = approvedLeaves.map((l) => l.userId.toString());
+    const attendedIdStrings = new Set(attendedIds.map((id) => id.toString()));
+    const approvedLeaveIdStrings = new Set(
+      approvedLeaveIds.map((id) => id.toString()),
+    );
+    const attendanceOrLeaveIds = [
+      ...new Set([...attendedIdStrings, ...approvedLeaveIdStrings]),
+    ];
 
     const usersToMarkAbsent = await User.find(
       {
-        _id: { $nin: [...attendedIds, ...approvedLeaveIds] },
-        status: "active",
+        _id: { $nin: attendanceOrLeaveIds },
+        isActive: true,
       },
       "_id email",
     );
@@ -56,8 +66,8 @@ const markAbsent = async () => {
       remark: "System Auto-Absent",
     }));
 
-    const usersOnLeave = approvedLeaveIds.filter(
-      (id) => !attendedIds.includes(id),
+    const usersOnLeave = [...approvedLeaveIdStrings].filter(
+      (id) => !attendedIdStrings.has(id),
     );
     const bulkLeave = usersOnLeave.map((id) => ({
       userId: id,

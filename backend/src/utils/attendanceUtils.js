@@ -27,6 +27,10 @@ export const getStatusByWorkingMinutes = (workingMinutes) => {
 };
 
 export const getEffectiveStatus = (attendance) => {
+  if (attendance?.isManualStatus) {
+    return String(attendance?.status || "absent").toLowerCase();
+  }
+
   if (!attendance?.checkIn) {
     return String(attendance?.status || "absent").toLowerCase();
   }

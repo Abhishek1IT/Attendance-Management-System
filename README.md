@@ -19,6 +19,7 @@ A full-stack attendance tracking application with role-based access for Admin an
 - Leave application and leave status workflow
 - Email notifications for attendance (check-in/check-out) and leave status updates
 - Admin attendance management
+- Admin today overview (who came, who did not come, who is on leave) without running scripts
 - Admin leave approval/rejection
 - Admin user management
 
@@ -68,6 +69,7 @@ Attendance Management System/
 - `GET /api/attendance/my` (protected)
 - `GET /api/attendance/monthly-summary` (protected)
 - `GET /api/attendance/all` (admin)
+- `GET /api/attendance/today-overview` (admin)
 - `PUT /api/attendance/update/:id` (admin)
 
 ### Leave
@@ -95,6 +97,7 @@ Backend uses these environment variables:
 - `FRONTEND_URL`
 - `EMAIL_USER` (SMTP sender email, e.g. Gmail)
 - `EMAIL_PASS` (SMTP app password)
+- `EMAIL_TIME_ZONE` (optional, default: `Asia/Kolkata`)
 
 Example `.env` for `backend/`:
 
@@ -105,6 +108,7 @@ JWT_SECRET=replace_with_strong_secret
 FRONTEND_URL=http://localhost:5173
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_email_app_password
+EMAIL_TIME_ZONE=Asia/Kolkata
 ```
 
 Email note:
@@ -181,6 +185,10 @@ cd backend
 npm run attendance:mark-absent
 npm run attendance:fix
 ```
+
+Admin note:
+
+- Scripts are useful for automation jobs, but admin can directly view daily office presence in the Attendance page via the `today-overview` API (no VS Code/script run needed).
 
 ## Authentication Flow
 

@@ -22,6 +22,10 @@ const attendanceSchema = new mongoose.Schema(
       enum: ["present", "absent", "half-day", "on-leave"],
       default: "present",
     },
+    isManualStatus: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

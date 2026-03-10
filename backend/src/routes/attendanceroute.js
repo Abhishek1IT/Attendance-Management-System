@@ -4,7 +4,8 @@ import { markAttendance,
          myAttendance, 
          monthlyAttendance, 
          getAllAttendance, 
-         updateAttendance
+         updateAttendance,
+         getTodayAttendanceOverview
         } from '../controllers/attendanceController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -16,6 +17,7 @@ router.get("/monthly-summary", protect(), monthlyAttendance);
 
 // Admin side routes
 router.get("/all", protect("Admin"), getAllAttendance);
+router.get("/today-overview", protect("Admin"), getTodayAttendanceOverview);
 router.put("/update/:id", protect("Admin"), updateAttendance);
 
 export default router;

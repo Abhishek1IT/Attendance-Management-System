@@ -1,4 +1,6 @@
 import Attendance from "../models/Attendance.js";
+import Leave from "../models/Leave.js";
+import User from "../models/User.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import {
   getToday,
@@ -56,6 +58,7 @@ export const markAttendance = async (req, res) => {
         date: today,
         checkIn: new Date(),
         status: "present",
+        isManualStatus: false,
       });
 
       const responseAttendance = withWorkingHours(attendance.toObject());
@@ -88,6 +91,7 @@ export const markAttendance = async (req, res) => {
       attendance.checkout = new Date();
       const workingMinutes = getWorkingMinutes(attendance);
       attendance.status = getStatusByWorkingMinutes(workingMinutes);
+      attendance.isManualStatus = false;
       await attendance.save();
 
       const responseAttendance = withWorkingHours(attendance.toObject());
@@ -213,10 +217,26 @@ export const updateAttendance = async (req, res) => {
   const { id } = req.params;
   const { status, remark } = req.body;
 
+  if (!status) {
+    return res.status(400).json({ message: "Status is required" });
+  }
+
+  const normalizedStatus = String(status).toLowerCase();
+  const allowedStatuses = ["present", "absent", "half-day", "on-leave"];
+
+  if (!allowedStatuses.includes(normalizedStatus)) {
+    return res.status(400).json({ message: "Invalid status" });
+  }
+
   try {
     const updaterecord = await Attendance.findByIdAndUpdate(
       id,
-      { status, remark, updatedAt: new Date() },
+      {
+        status: normalizedStatus,
+        remark,
+        isManualStatus: true,
+        updatedAt: new Date(),
+      },
       { new: true },
     );
 
@@ -230,5 +250,82 @@ export const updateAttendance = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const getTodayAttendanceOverview = async (req, res) => {
+  try {
+    const today = getToday();
+    const now = new Date();
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const todayEnd = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+    );
+
+    const [users, todayAttendance, leaveUserIds] = await Promise.all([
+      User.find({ isActive: true, role: "Employee" }).select(
+        "name email department",
+      ),
+      Attendance.find({ date: today }).select("userId status checkIn checkout isManualStatus"),
+      Leave.find({
+        status: "Approved",
+        fromDate: { $lt: todayEnd },
+        toDate: { $gte: todayStart },
+      }).distinct("userId"),
+    ]);
+
+    const leaveSet = new Set(leaveUserIds.map((id) => id.toString()));
+    const attendanceMap = new Map(
+      todayAttendance.map((a) => [a.userId.toString(), a]),
+    );
+
+    const came = [];
+    const notCame = [];
+    const onLeave = [];
+
+    users.forEach((user) => {
+      const userId = user._id.toString();
+      const attendance = attendanceMap.get(userId);
+
+      if (attendance) {
+        const effectiveStatus = getEffectiveStatus(attendance);
+
+        if (effectiveStatus === "absent") {
+          notCame.push({ ...user.toObject(), status: effectiveStatus });
+          return;
+        }
+
+        came.push({ ...user.toObject(), status: effectiveStatus });
+        return;
+      }
+
+      if (leaveSet.has(userId)) {
+        onLeave.push({ ...user.toObject(), status: "on-leave" });
+        return;
+      }
+
+      notCame.push({ ...user.toObject(), status: "absent" });
+    });
+
+    return res.json({
+      date: today,
+      summary: {
+        totalEmployees: users.length,
+        came: came.length,
+        notCame: notCame.length,
+        onLeave: onLeave.length,
+      },
+      came,
+      notCame,
+      onLeave,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };

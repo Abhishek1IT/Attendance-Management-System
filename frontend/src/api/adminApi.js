@@ -21,5 +21,8 @@ export const updateLeaveStatusApi = (id, status) =>
 export const getAllAttendanceApi = () =>
   api.get("/attendance/all");
 
+export const getTodayAttendanceOverviewApi = () =>
+  api.get("/attendance/today-overview");
+
 export const updateAttendanceApi = (id, status, remark = "") =>
   api.put(`/attendance/update/${id}`, { status, remark });
