@@ -1,3 +1,4 @@
+import cron from "node-cron";
 import Attendance from "../models/Attendance.js";
 import Leave from "../models/Leave.js";
 import User from "../models/User.js";
@@ -12,9 +13,34 @@ const SCHEDULER_TIME_ZONE = process.env.SCHEDULER_TIME_ZONE || "Asia/Kolkata";
 const AUTO_ABSENT_TIME = process.env.AUTO_ABSENT_TIME || "18:30";
 const ATTENDANCE_FIX_TIME = process.env.ATTENDANCE_FIX_TIME || "23:50";
 
-const executedForDate = {
-  autoAbsent: null,
-  attendanceFix: null,
+const toCronExpression = (hhmm, fallback) => {
+  const match = String(hhmm || "").match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) {
+    return fallback;
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return fallback;
+  }
+
+  return `${minute} ${hour} * * *`;
+};
+
+const AUTO_ABSENT_CRON =
+  process.env.AUTO_ABSENT_CRON || toCronExpression(AUTO_ABSENT_TIME, "30 18 * * *");
+const ATTENDANCE_FIX_CRON =
+  process.env.ATTENDANCE_FIX_CRON || toCronExpression(ATTENDANCE_FIX_TIME, "50 23 * * *");
+
+const isSundayInSchedulerTimeZone = () => {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: SCHEDULER_TIME_ZONE,
+    weekday: "short",
+  }).format(new Date());
+
+  return weekday === "Sun";
 };
 
 const buildAbsentEmailHtml = (date) => `
@@ -27,28 +53,10 @@ const buildAbsentEmailHtml = (date) => `
   </div>
 `;
 
-const getClockInTimeZone = (date = new Date()) => {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: SCHEDULER_TIME_ZONE,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).formatToParts(date);
-
-  const val = (type) => parts.find((p) => p.type === type)?.value || "";
-  return {
-    date: `${val("year")}-${val("month")}-${val("day")}`,
-    time: `${val("hour")}:${val("minute")}`,
-  };
-};
-
 const runAutoMarkAbsent = async () => {
   const today = getToday();
 
-  if (new Date().getDay() === 0) {
+  if (isSundayInSchedulerTimeZone()) {
     console.log("[Scheduler] Sunday detected. Skipping auto absent.");
     return;
   }
@@ -132,7 +140,7 @@ const runAutoMarkAbsent = async () => {
 const runAttendanceFix = async () => {
   const today = getToday();
 
-  if (new Date().getDay() === 0) {
+  if (isSundayInSchedulerTimeZone()) {
     console.log("[Scheduler] Sunday detected. Skipping attendance fix.");
     return;
   }
@@ -174,14 +182,12 @@ const runAttendanceFix = async () => {
   console.log(`[Scheduler] - Absent fixed: ${absentCount}`);
 };
 
-const runScheduledTask = async (taskName, taskRunner, dateKey) => {
+const runScheduledTask = async (taskName, taskRunner) => {
   try {
     await taskRunner();
-    executedForDate[taskName] = dateKey;
   } catch (error) {
     if (error?.code === 11000 || error?.name === "BulkWriteError") {
       console.log(`[Scheduler] ${taskName} duplicate records handled.`);
-      executedForDate[taskName] = dateKey;
       return;
     }
 
@@ -189,26 +195,24 @@ const runScheduledTask = async (taskName, taskRunner, dateKey) => {
   }
 };
 
-const checkAndRunSchedules = async () => {
-  const { date, time } = getClockInTimeZone();
-
-  if (time === AUTO_ABSENT_TIME && executedForDate.autoAbsent !== date) {
-    await runScheduledTask("autoAbsent", runAutoMarkAbsent, date);
-  }
-
-  if (time === ATTENDANCE_FIX_TIME && executedForDate.attendanceFix !== date) {
-    await runScheduledTask("attendanceFix", runAttendanceFix, date);
-  }
-};
-
 export const startAttendanceScheduler = () => {
   console.log(
-    `[Scheduler] Started (${SCHEDULER_TIME_ZONE}) | auto-absent: ${AUTO_ABSENT_TIME}, fix: ${ATTENDANCE_FIX_TIME}`,
+    `[Scheduler] Started (${SCHEDULER_TIME_ZONE}) | auto-absent cron: ${AUTO_ABSENT_CRON}, fix cron: ${ATTENDANCE_FIX_CRON}`,
   );
 
-  setInterval(() => {
-    checkAndRunSchedules().catch((error) => {
-      console.error("[Scheduler] Tick failed:", error.message);
-    });
-  }, 60 * 1000);
+  cron.schedule(
+    AUTO_ABSENT_CRON,
+    () => {
+      runScheduledTask("autoAbsent", runAutoMarkAbsent);
+    },
+    { timezone: SCHEDULER_TIME_ZONE },
+  );
+
+  cron.schedule(
+    ATTENDANCE_FIX_CRON,
+    () => {
+      runScheduledTask("attendanceFix", runAttendanceFix);
+    },
+    { timezone: SCHEDULER_TIME_ZONE },
+  );
 };

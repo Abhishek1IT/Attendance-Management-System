@@ -101,6 +101,8 @@ Backend uses these environment variables:
 - `SCHEDULER_TIME_ZONE` (optional, default: `Asia/Kolkata`)
 - `AUTO_ABSENT_TIME` (optional, default: `18:30`)
 - `ATTENDANCE_FIX_TIME` (optional, default: `23:50`)
+- `AUTO_ABSENT_CRON` (optional, cron format like `30 18 * * *`)
+- `ATTENDANCE_FIX_CRON` (optional, cron format like `50 23 * * *`)
 
 Example `.env` for `backend/`:
 
@@ -115,6 +117,8 @@ EMAIL_TIME_ZONE=Asia/Kolkata
 SCHEDULER_TIME_ZONE=Asia/Kolkata
 AUTO_ABSENT_TIME=18:30
 ATTENDANCE_FIX_TIME=23:50
+AUTO_ABSENT_CRON=30 18 * * *
+ATTENDANCE_FIX_CRON=50 23 * * *
 ```
 
 Email note:
@@ -196,6 +200,7 @@ Admin note:
 
 - Scripts are useful for automation jobs, but admin can directly view daily office presence in the Attendance page via the `today-overview` API (no VS Code/script run needed).
 - EOD automation runs automatically when backend server is running via the in-app scheduler (`src/jobs/attendanceScheduler.js`).
+- Scheduler uses `node-cron`; if `*_CRON` is set, it takes precedence over `*_TIME` values.
 
 ## Authentication Flow
 
