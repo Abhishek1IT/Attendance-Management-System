@@ -98,6 +98,9 @@ Backend uses these environment variables:
 - `EMAIL_USER` (SMTP sender email, e.g. Gmail)
 - `EMAIL_PASS` (SMTP app password)
 - `EMAIL_TIME_ZONE` (optional, default: `Asia/Kolkata`)
+- `SCHEDULER_TIME_ZONE` (optional, default: `Asia/Kolkata`)
+- `AUTO_ABSENT_TIME` (optional, default: `18:30`)
+- `ATTENDANCE_FIX_TIME` (optional, default: `23:50`)
 
 Example `.env` for `backend/`:
 
@@ -109,6 +112,9 @@ FRONTEND_URL=http://localhost:5173
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_email_app_password
 EMAIL_TIME_ZONE=Asia/Kolkata
+SCHEDULER_TIME_ZONE=Asia/Kolkata
+AUTO_ABSENT_TIME=18:30
+ATTENDANCE_FIX_TIME=23:50
 ```
 
 Email note:
@@ -189,6 +195,7 @@ npm run attendance:fix
 Admin note:
 
 - Scripts are useful for automation jobs, but admin can directly view daily office presence in the Attendance page via the `today-overview` API (no VS Code/script run needed).
+- EOD automation runs automatically when backend server is running via the in-app scheduler (`src/jobs/attendanceScheduler.js`).
 
 ## Authentication Flow
 
