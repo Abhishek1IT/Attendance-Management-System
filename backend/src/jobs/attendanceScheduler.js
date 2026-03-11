@@ -2,8 +2,10 @@ import cron from 'node-cron';
 import Attendance  from '../models/Attendance.js';
 
 export const startAttendanceScheduler = () => {
+  console.log('[SCHEDULER] Attendance scheduler started. Cron: "0 * * * *" (hourly, Asia/Kolkata).');
+
   cron.schedule("0 * * * *", async () => { 
-    console.log("Running attendance scheduler...");
+    console.log(`[SCHEDULER] Running attendance scheduler at ${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}`);
 
     try {
       const records = await Attendance.find({ status: "pending" });
@@ -38,6 +40,8 @@ export const startAttendanceScheduler = () => {
     } catch (err) {
       console.log("Cron error:", err);
     }
+  }, {
+    timezone: "Asia/Kolkata",
   });
 
 };
