@@ -6,7 +6,7 @@ export const sendEmail = async (to, subject, text, html) => {
 
     if (!emailUser || !emailPass || emailPass === "your_app_password") {
         console.error(
-            "Email not sent: set valid EMAIL_USER and Gmail App Password in environment.",
+            "[EMAIL] Email not sent: set valid EMAIL_USER and Gmail App Password in environment.",
         );
         return false;
     }
@@ -35,7 +35,7 @@ export const sendEmail = async (to, subject, text, html) => {
         return true;
     } catch (error) {
         const code = error?.responseCode ? ` (code: ${error.responseCode})` : "";
-        console.error(`Error sending email${code}: ${error.message}`);
+        console.error(`[EMAIL] Error sending email${code}: ${error.message}`);
         return false;
     }
 };
